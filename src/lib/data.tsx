@@ -6,7 +6,7 @@ import type { DatasetRecord, FeatureProps, Hypothesis, LayerDef } from '@/types/
 
 const API = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? '/api'
 
-export type BackendStatus = 'connecting' | 'postgres' | 'offline-seed'
+export type BackendStatus = 'connecting' | 'postgres' | 'static-data' | 'offline-seed'
 export interface CoverageRow { class: 'confirmed_searched' | 'partially_surveyed' | 'insufficient_resolution' | 'unknown'; areaKm2: number; surveys: number }
 interface DataState { status: BackendStatus; postgis?: string; layers: LayerDef[]; datasets: DatasetRecord[]; hypotheses: Hypothesis[]; coverage: CoverageRow[] }
 
@@ -46,7 +46,27 @@ export function DataProvider({ children }: { children: ReactNode }) {
         })
         if (!cancelled) setState({ status: 'postgres', postgis: health.postgis, layers, datasets, hypotheses, coverage })
       } catch {
-        if (!cancelled) setState((s) => ({ ...s, status: 'offline-seed' }))
+        // No API: use GeoJSON published into /data by the GitHub Actions data pipeline, if present.
+        const layerIds = ['ocean-debris', 'search-sonar-coverage', 'search-areas']
+        const loaded = await Promise.all(
+          layerIds.map((id) =>
+            fetch(`/data/${id}.geojson`)
+              .then((r) => (r.ok && r.headers.get('content-type')?.includes('json') !== false ? r.json() : null))
+              .then((fc: GeoJSON.FeatureCollection<GeoJSON.Geometry, FeatureProps> | null) => (fc?.features?.length ? ([id, fc] as const) : null))
+              .catch(() => null),
+          ),
+        )
+        const coverage = await fetch('/data/coverage-summary.json').then((r) => (r.ok ? r.json() : [])).catch(() => [])
+        const found = new Map(loaded.filter((x) => x !== null))
+        const layers = LAYERS.map((l) => {
+          const fc = found.get(l.id)
+          if (!fc) return l
+          // Pipeline-published debris replaces the hand-seeded locality points.
+          const evidenceClass = l.evidenceClass === 'pending' ? fc.features[0].properties.evidenceClass : l.evidenceClass
+          return { ...l, evidenceClass, data: fc }
+        })
+        if (!cancelled)
+          setState((s) => ({ ...s, layers, coverage: Array.isArray(coverage) ? coverage : [], status: found.size ? 'static-data' : 'offline-seed' }))
       }
     })()
     return () => { cancelled = true }

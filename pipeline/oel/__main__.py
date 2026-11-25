@@ -8,6 +8,7 @@ from pathlib import Path
 from shapely.geometry import mapping
 
 from . import __version__, acquire, doubleentry, ecat, footprint
+from . import static_export
 from .db import connect, run
 
 DATA = Path(__file__).resolve().parents[1] / "data"
@@ -174,6 +175,30 @@ def main():
     s.add_argument("first")
     s.add_argument("second")
     s.set_defaults(func=cmd_load_debris)
+
+    s = sub.add_parser("fetch", help="[no DB] download a zip resolved from an eCat record into a folder")
+    s.add_argument("uuid")
+    s.add_argument("--match", required=True)
+    s.add_argument("--dest", required=True)
+    s.set_defaults(func=lambda a: static_export.fetch(a.uuid, a.match, Path(a.dest)))
+
+    s = sub.add_parser("footprints-geojson", help="[no DB] coverage footprints → GeoJSON for the static site")
+    s.add_argument("src")
+    s.add_argument("--out", required=True)
+    s.add_argument("--campaign", required=True)
+    s.add_argument("--coverage", required=True, choices=["confirmed_searched", "partially_surveyed", "insufficient_resolution", "unknown"])
+    s.add_argument("--dataset-name", required=True)
+    s.add_argument("--source-url", required=True)
+    s.add_argument("--published")
+    s.add_argument("--sensor", default="multibeam echosounder")
+    s.add_argument("--resolution-m", type=float)
+    s.set_defaults(func=lambda a: static_export.footprints_geojson(Path(a.src), Path(a.out), a.campaign, a.coverage, a.dataset_name, a.source_url, a.published, a.sensor, a.resolution_m))
+
+    s = sub.add_parser("debris-geojson", help="[no DB] double-entry check, then debris → GeoJSON for the static site")
+    s.add_argument("first")
+    s.add_argument("second")
+    s.add_argument("--out", required=True)
+    s.set_defaults(func=lambda a: static_export.debris_geojson(Path(a.first), Path(a.second), Path(a.out)))
 
     a = p.parse_args()
     a.func(a)

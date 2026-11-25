@@ -1,5 +1,19 @@
 # Phase 2 ingestion pipeline
 
+## No terminal? Use GitHub Actions (browser only)
+
+The workflow `.github/workflows/data-pipeline.yml` runs the pipeline on GitHub's servers and commits
+GeoJSON into `public/data/`; Vercel redeploys and the site shows it (status bar: "Pipeline data (static)").
+
+- **Coverage footprints:** repo → Actions → *Data pipeline* → Run workflow → task `ga-p1-footprints`.
+- **Debris:** edit `pipeline/transcriptions/debris_a.csv` and `debris_b.csv` in the browser and commit.
+  The workflow runs automatically; a red ❌ means the two copies disagree — open the run to see each
+  `MISMATCH`, fix, commit again. Green ✅ = published.
+
+One-time: repo Settings → Actions → General → Workflow permissions → **Read and write**.
+
+## With a server and terminal
+
 Python 3.10+. Runs on the VPS next to PostgreSQL, using the `oel_ingest` role (insert/update only —
 it cannot delete; re-derivations *supersede* old rows, which stay in the database for audit).
 Every command is logged in `ingestion_runs` and appended to the dataset's `processing_history`.

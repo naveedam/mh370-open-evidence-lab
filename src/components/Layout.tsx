@@ -61,12 +61,12 @@ export function Layout() {
         </nav>
         <div className="border-t border-ink-700 p-3 text-[10px] leading-relaxed text-slate-500">
           Independent research initiative. Model outputs are never presented as established fact.
-          <div className="mt-1 mono text-slate-600">v0.2.0 · Phase 2</div>
+          <div className="mt-1 mono text-slate-600">v0.2.1 · Phase 2</div>
         </div>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-10 shrink-0 items-center gap-6 border-b border-ink-700 bg-ink-900 px-4">
-          <Status label="Backend" value={status === 'postgres' ? `PostgreSQL · PostGIS ${postgis}` : status === 'connecting' ? 'Connecting…' : 'Seed data (API offline)'} tone={status === 'postgres' ? 'ok' : 'warn'} />
+          <Status label="Backend" value={status === 'postgres' ? `PostgreSQL · PostGIS ${postgis}` : status === 'connecting' ? 'Connecting…' : status === 'static-data' ? 'Pipeline data (static)' : 'Seed data (API offline)'} tone={status === 'postgres' || status === 'static-data' ? 'ok' : 'warn'} />
           <Status label="Datasets ingested" value={`${ingested}/${DATASETS.length}`} tone="muted" />
           <Status label="Map layers loaded" value={`${loadedLayers}/${LAYERS.length}`} tone="muted" />
           <Status label="AI models" value="None operational" tone="muted" />
