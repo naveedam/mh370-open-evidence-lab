@@ -1,0 +1,17 @@
+# systemd unit for the read-only API.  sudo cp deploy/oel-api.service /etc/systemd/system/ && sudo systemctl enable --now oel-api
+[Unit]
+Description=MH370 Open Evidence Lab API
+After=network.target postgresql.service
+
+[Service]
+User=oel
+WorkingDirectory=/opt/mh370-open-evidence-lab
+EnvironmentFile=/opt/mh370-open-evidence-lab/.env
+ExecStart=/usr/bin/node server/index.ts
+Restart=on-failure
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target
