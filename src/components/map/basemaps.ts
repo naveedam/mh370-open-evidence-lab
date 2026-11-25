@@ -14,7 +14,8 @@ const raster = (id: string, tiles: string[], attribution: string, maxzoom = 19):
 export const BASEMAPS = {
   dark: {
     label: 'Dark',
-    style: raster('carto-dark', ['https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', 'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'], '© OpenStreetMap contributors © CARTO'),
+    // Esri Dark Gray Canvas — keyless. (CARTO basemaps now require an API key.)
+    style: raster('esri-dark', ['https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}'], 'Esri, HERE, Garmin, © OpenStreetMap contributors', 16),
   },
   ocean: {
     label: 'Ocean',
