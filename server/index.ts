@@ -23,7 +23,7 @@ const routes: Record<string, (url: URL) => Promise<[number, unknown, string?]>> 
     const { rows } = await pool.query(
       `select slug as id, name, organisation, original_url as url, publication_date as "publicationDate", acquisition_date as "acquisitionDate",
               coverage_description as coverage, data_format as format, licensing, quality_assessment as quality,
-              processing_history as "processingHistory", access, ingestion as "ingestionStatus", tags
+              processing_history as "processingHistory", access, ingestion as "ingestionStatus", tags, ecat_uuid as "ecatUuid"
        from research_datasets order by name`,
     )
     return [200, rows]
@@ -35,14 +35,22 @@ const routes: Record<string, (url: URL) => Promise<[number, unknown, string?]>> 
           'type','Feature',
           'geometry', ST_AsGeoJSON(geom, 6)::json,
           'properties', json_build_object(
-            'id', slug, 'layer', layer_id, 'name', name, 'description', description, 'evidenceClass', evidence_class,
+            'id', feature_id, 'layer', layer_id, 'name', name, 'description', description, 'evidenceClass', evidence_class,
             'source', source_text, 'sourceUrl', source_url, 'publicationDate', publication_date, 'date', observed_at,
             'spatialAccuracy', spatial_accuracy, 'methodology', methodology, 'confidence', confidence,
-            'verificationNote', verification_note))), '[]'::json) as features
-       from geographic_features where $1::text is null or layer_id = $1`,
+            'verificationNote', verification_note, 'coverageClass', coverage_class))), '[]'::json) as features
+       from map_features where $1::text is null or layer_id = $1`,
       [layer],
     )
     return [200, { type: 'FeatureCollection', features: rows[0].features }, 'application/geo+json']
+  },
+  '/api/coverage': async () => {
+    // Areas use the union per class (overlapping surveys are not double counted), on the ellipsoid.
+    const { rows } = await pool.query(
+      `select coverage::text as class, round((ST_Area(ST_Union(geom)::geography) / 1e6)::numeric, 0)::float8 as "areaKm2", count(*)::int as surveys
+       from sonar_surveys where superseded_by_run is null group by coverage order by coverage`,
+    )
+    return [200, rows]
   },
   '/api/hypotheses': async () => {
     const { rows } = await pool.query(

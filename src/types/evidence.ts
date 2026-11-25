@@ -31,6 +31,7 @@ export interface FeatureProps extends Provenance {
   date?: string
   description: string
   evidenceClass: EvidenceClass
+  coverageClass?: string | null
 }
 
 export type LayerGroup = 'Flight information' | 'Historical underwater searches' | 'Oceanography' | 'Research layers'
@@ -65,6 +66,8 @@ export interface DatasetRecord {
   processingHistory: string[]
   access: 'open-download' | 'open-viewer-only' | 'reports-only' | 'restricted' | 'unverified'
   ingestionStatus: 'ingested' | 'catalogued' | 'pending-review'
+  /** Geoscience Australia eCat record — download links are resolved from it at ingestion time */
+  ecatUuid?: string
   tags: string[]
 }
 

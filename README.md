@@ -96,6 +96,7 @@ src/
 server/            Read-only API (node:http + pg)
 scripts/           migrate.ts, seed.ts
 db/                roles.sql, migrations/
+pipeline/          Python ingestion pipeline (Phase 2)
 deploy/            systemd unit, nginx config
 docs/              Architecture, data acquisition assessment
 ```
@@ -105,7 +106,7 @@ docs/              Architecture, data acquisition assessment
 | Phase | Scope | Status |
 |---|---|---|
 | 1 | Scaffold, navigation, dashboard, map, evidence repository, schema | ✅ Done |
-| 2 | Download & ingest GA/ATSB/Inmarsat data → PostGIS | Next |
+| 2 | Ingestion pipeline (`pipeline/`): eCat link resolution, checksummed downloads, coverage footprints, double-entry debris transcription | ✅ Built — run on VPS (see `pipeline/README.md`) |
 | 3 | Flight reconstruction, drift modelling, coverage analysis | UI shells in place |
 | 4 | Sonar annotation (UI done, local-only), CV experiments, hypothesis scoring | Partial UI |
 

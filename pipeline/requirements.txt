@@ -1,0 +1,7 @@
+psycopg[binary]>=3.2
+requests>=2.32
+lxml>=5.0
+numpy>=1.26
+rasterio>=1.4
+shapely>=2.0
+pyproj>=3.6

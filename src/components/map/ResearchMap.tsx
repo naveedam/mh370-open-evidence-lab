@@ -48,7 +48,10 @@ function addDataLayers(map: MLMap, LAYERS: LayerDef[]) {
     } else if (def.geometry === 'line') {
       map.addLayer({ id: def.id, type: 'line', source: def.id, layout: { visibility: 'none' }, paint: { 'line-color': color, 'line-width': 1.5, 'line-dasharray': [3, 2] } })
     } else {
-      map.addLayer({ id: def.id, type: 'fill', source: def.id, layout: { visibility: 'none' }, paint: { 'fill-color': color, 'fill-opacity': 0.12, 'fill-outline-color': color } })
+      const fill: maplibregl.ExpressionSpecification = ['match', ['coalesce', ['get', 'coverageClass'], ''],
+        'confirmed_searched', '#5fb98a', 'partially_surveyed', '#5b9bd5', 'insufficient_resolution', '#d6a64a', 'unknown', '#7b8796', color]
+      map.addLayer({ id: def.id, type: 'fill', source: def.id, layout: { visibility: 'none' }, paint: { 'fill-color': fill, 'fill-opacity': 0.18 } })
+      map.addLayer({ id: `${def.id}-halo`, type: 'line', source: def.id, layout: { visibility: 'none' }, paint: { 'line-color': fill, 'line-width': 1 } })
     }
   }
   if (!map.getSource('measure')) {

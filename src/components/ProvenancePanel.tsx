@@ -29,6 +29,7 @@ export function ProvenancePanel({ feature, onClose }: { feature: FeatureProps | 
         <button onClick={onClose} className="text-slate-500 hover:text-slate-200"><X className="h-4 w-4" /></button>
       </div>
       <p className="mb-3 text-xs leading-relaxed text-slate-400">{feature.description}</p>
+      {feature.coverageClass && <Row k="Coverage class" v={feature.coverageClass.replace(/_/g, ' ')} />}
       <Row k="Date" v={feature.date} />
       <Row k="Source" v={feature.source} />
       <Row k="Published" v={feature.publicationDate} />

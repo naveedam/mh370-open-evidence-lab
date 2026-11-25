@@ -11,15 +11,31 @@ const db = new pg.Client({ connectionString: url })
 await db.connect()
 await db.query('begin')
 
+const SOURCES = [
+  ['atsb-final-2017', 'Australian Transport Safety Bureau', 'The Operational Search for MH370 (final report)', 'https://www.atsb.gov.au/mh370-operational-search-reports', '2017-10-03'],
+  ['mot-sir-2018', 'Ministry of Transport Malaysia', 'Safety Investigation Report — MH370 (9M-MRO)', 'https://www.mot.gov.my/', '2018-07-30'],
+  ['ga-mh370-data', 'Geoscience Australia', 'MH370 data release', 'https://www.ga.gov.au/scientific-topics/marine-and-coastal/showcase/mh370-data-release', null],
+  ['csiro-drift', 'CSIRO', 'MH370 drift research', 'https://www.csiro.au/en/research/natural-environment/oceans/our-impact/technology-development/mh370', null],
+] as const
+for (const [slug, org, title, url, pub] of SOURCES) {
+  await db.query(
+    `insert into evidence_sources (slug, organisation, title, url, publication_date) values ($1,$2,$3,$4,$5)
+     on conflict (slug) do update set organisation=excluded.organisation, title=excluded.title, url=excluded.url, publication_date=excluded.publication_date`,
+    [slug, org, title, url, pub],
+  )
+}
+
 for (const d of DATASETS) {
   await db.query(
-    `insert into research_datasets (slug,name,organisation,original_url,publication_date,acquisition_date,coverage_description,data_format,licensing,quality_assessment,processing_history,access,ingestion,tags)
-     values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+    `insert into research_datasets (slug,name,organisation,original_url,publication_date,acquisition_date,coverage_description,data_format,licensing,quality_assessment,processing_history,access,ingestion,tags,ecat_uuid)
+     values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
      on conflict (slug) do update set name=excluded.name, organisation=excluded.organisation, original_url=excluded.original_url,
        publication_date=excluded.publication_date, coverage_description=excluded.coverage_description, data_format=excluded.data_format,
-       licensing=excluded.licensing, quality_assessment=excluded.quality_assessment, processing_history=excluded.processing_history,
-       access=excluded.access, ingestion=excluded.ingestion, tags=excluded.tags`,
-    [d.id, d.name, d.organisation, d.url, d.publicationDate, d.acquisitionDate, d.coverage, d.format, d.licensing, d.quality, JSON.stringify(d.processingHistory), d.access, d.ingestionStatus, d.tags],
+       licensing=excluded.licensing, quality_assessment=excluded.quality_assessment,
+       access=excluded.access, tags=excluded.tags, ecat_uuid=excluded.ecat_uuid,
+       -- never overwrite pipeline-managed state
+       ingestion=case when research_datasets.ingestion='catalogued' then excluded.ingestion else research_datasets.ingestion end`,
+    [d.id, d.name, d.organisation, d.url, d.publicationDate, d.acquisitionDate, d.coverage, d.format, d.licensing, d.quality, JSON.stringify(d.processingHistory), d.access, d.ingestionStatus, d.tags, d.ecatUuid ?? null],
   )
 }
 
@@ -52,5 +68,5 @@ for (const h of SEED_HYPOTHESES) {
 }
 
 await db.query('commit')
-console.log(`seeded ${DATASETS.length} datasets, ${n} features, ${SEED_HYPOTHESES.length} hypotheses`)
+console.log(`seeded ${SOURCES.length} sources, ${DATASETS.length} datasets, ${n} features, ${SEED_HYPOTHESES.length} hypotheses`)
 await db.end()

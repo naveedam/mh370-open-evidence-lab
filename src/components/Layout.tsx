@@ -61,7 +61,7 @@ export function Layout() {
         </nav>
         <div className="border-t border-ink-700 p-3 text-[10px] leading-relaxed text-slate-500">
           Independent research initiative. Model outputs are never presented as established fact.
-          <div className="mt-1 mono text-slate-600">v0.1.3 · Phase 1</div>
+          <div className="mt-1 mono text-slate-600">v0.2.0 · Phase 2</div>
         </div>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
