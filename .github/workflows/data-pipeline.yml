@@ -1,0 +1,55 @@
+name: Data pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: What to run
+        type: choice
+        options: [debris, ga-p1-footprints]
+  push:
+    branches: [main]
+    paths: ['pipeline/transcriptions/**']
+
+permissions:
+  contents: write
+
+concurrency: data-pipeline
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: pipeline/requirements.txt
+      - run: pip install -r pipeline/requirements.txt
+
+      - name: Debris — double-entry check and export
+        if: github.event_name == 'push' || inputs.task == 'debris'
+        working-directory: pipeline
+        run: python -m oel debris-geojson transcriptions/debris_a.csv transcriptions/debris_b.csv --out ../public/data/ocean-debris.geojson
+
+      - name: GA Phase 1 bathymetry — download and derive coverage footprints
+        if: inputs.task == 'ga-p1-footprints'
+        working-directory: pipeline
+        run: |
+          python -m oel fetch d887e71a-71dc-4851-94a9-920f7b7cc7e5 --match 150m --dest data/ga-p1
+          python -m oel footprints-geojson data/ga-p1 --out ../public/data/search-sonar-coverage.geojson \
+            --campaign "Phase 1 bathymetry survey (2014–2015)" --coverage insufficient_resolution \
+            --dataset-name "Geoscience Australia — MH370 Phase 1 150 m bathymetry (CC BY 4.0)" \
+            --source-url "https://ecat.ga.gov.au/geonetwork/srv/eng/catalog.search#/metadata/d887e71a-71dc-4851-94a9-920f7b7cc7e5" \
+            --published 2017-07-14
+          cp data/ga-p1/manifest.json ../public/data/ga-p1-manifest.json
+
+      - name: Commit results (Vercel redeploys automatically)
+        run: |
+          git config user.name "oel-pipeline[bot]"
+          git config user.email "oel-pipeline@users.noreply.github.com"
+          git add public/data
+          if git diff --cached --quiet; then echo "No data changes."; exit 0; fi
+          git commit -m "data: ${{ inputs.task || 'debris' }} via Data pipeline (run ${{ github.run_id }})"
+          git push
