@@ -1,4 +1,5 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { Activity, Archive, BookOpen, Compass, FlaskConical, Map, Plane, Radar, ScanSearch, Waves } from 'lucide-react'
 import { useData } from '@/lib/data'
 import { cn } from '@/lib/utils'
@@ -26,6 +27,7 @@ function Status({ label, value, tone }: { label: string; value: string; tone: 'o
 }
 
 export function Layout() {
+  const { pathname } = useLocation()
   const { status, postgis, layers: LAYERS, datasets: DATASETS } = useData()
   const loadedLayers = LAYERS.filter((l) => l.data || l.tiles).length
   const ingested = DATASETS.filter((d) => d.ingestionStatus === 'ingested').length
@@ -59,7 +61,7 @@ export function Layout() {
         </nav>
         <div className="border-t border-ink-700 p-3 text-[10px] leading-relaxed text-slate-500">
           Independent research initiative. Model outputs are never presented as established fact.
-          <div className="mt-1 mono text-slate-600">v0.1.2 · Phase 1</div>
+          <div className="mt-1 mono text-slate-600">v0.1.3 · Phase 1</div>
         </div>
       </aside>
       <div className="flex min-w-0 flex-1 flex-col">
@@ -70,7 +72,9 @@ export function Layout() {
           <Status label="AI models" value="None operational" tone="muted" />
         </header>
         <main className="min-h-0 flex-1 overflow-auto">
-          <Outlet />
+          <ErrorBoundary resetKey={pathname}>
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
     </div>

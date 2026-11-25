@@ -77,6 +77,7 @@ export function ResearchMap({ visible, onSelect, selectedId, compact, className 
   const [measuring, setMeasuring] = useState(false)
   const [measureKm, setMeasureKm] = useState(0)
   const [ready, setReady] = useState(false)
+  const [failed, setFailed] = useState(false)
 
   const applyVisibility = (map: MLMap) => {
     for (const def of layersRef.current) {
@@ -99,14 +100,21 @@ export function ResearchMap({ visible, onSelect, selectedId, compact, className 
 
   useEffect(() => {
     if (!ref.current) return
-    const map = new maplibregl.Map({
+    let map: MLMap
+    try {
+      map = new maplibregl.Map({
       container: ref.current,
       style: BASEMAPS.dark.style,
       center: INITIAL_CENTER,
       zoom: INITIAL_ZOOM,
       attributionControl: { compact: true },
       renderWorldCopies: false,
-    })
+      })
+    } catch (err) {
+      console.error('Map failed to initialise', err)
+      setFailed(true)
+      return
+    }
     mapRef.current = map
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), 'top-right')
     map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left')
@@ -197,6 +205,17 @@ export function ResearchMap({ visible, onSelect, selectedId, compact, className 
       features,
     })
   }
+
+  if (failed)
+    return (
+      <div className={cn('flex h-full w-full items-center justify-center p-6 text-center', className)}>
+        <div className="max-w-sm text-xs leading-relaxed text-slate-400">
+          <div className="mb-1 text-sm text-slate-200">Map unavailable in this browser</div>
+          The map needs WebGL, which is disabled or unsupported here. Enable hardware acceleration or try a
+          current Chrome, Edge, Firefox or Safari. All other modules work normally.
+        </div>
+      </div>
+    )
 
   return (
     <div className={cn('relative h-full w-full overflow-hidden', className)}>
