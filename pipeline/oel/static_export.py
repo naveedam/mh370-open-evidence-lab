@@ -31,7 +31,10 @@ def fetch(uuid: str, match: str, dest: Path) -> dict:
     rec = ecat.fetch(uuid)
     links = [l for l in rec.links if match.lower() in (l.url + " " + l.name).lower() and l.url.lower().split("?")[0].endswith(".zip")]
     if len(links) != 1:
-        raise SystemExit("expected exactly one matching .zip link, found: " + ", ".join(l.url for l in links) or "none")
+        print(f"eCat record '{rec.title}' has {len(rec.links)} link(s):")
+        for l in rec.links:
+            print(f"  - {l.url}")
+        raise SystemExit(f"expected exactly one .zip link matching '{match}', found {len(links)}")
     m = acquire.download(links[0].url, dest)
     m.update({"ecat_uuid": uuid, "ecat_title": rec.title, "licence": rec.licence})
     (dest / "manifest.json").write_text(json.dumps(m, indent=2))

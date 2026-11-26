@@ -1,12 +1,13 @@
-"""Resolve download links from Geoscience Australia's eCat (GeoNetwork) ISO 19139 metadata.
-Links are read from the authoritative record at run time — nothing is hard-coded."""
+"""Resolve download links from Geoscience Australia's eCat (GeoNetwork) metadata.
+Links are read from the authoritative record at run time — nothing is hard-coded.
+Namespace-agnostic: handles ISO 19115-3 (mdb/cit/mrd, what eCat serves) and legacy ISO 19139 (gmd)."""
 from dataclasses import dataclass
 
 import requests
 from lxml import etree
 
 ECAT = "https://ecat.ga.gov.au/geonetwork/srv/api/records/{uuid}/formatters/xml"
-NS = {"gmd": "http://www.isotc211.org/2005/gmd", "gco": "http://www.isotc211.org/2005/gco"}
+HEADERS = {"Accept": "application/xml", "User-Agent": "mh370-open-evidence-lab-pipeline (+https://github.com/naveedam/mh370-open-evidence-lab)"}
 
 
 @dataclass
@@ -25,29 +26,44 @@ class Record:
     licence: str | None
 
 
-def _text(el, path):
-    r = el.xpath(path, namespaces=NS)
-    return r[0].strip() if r and isinstance(r[0], str) else None
+def _first_text(el, local: str) -> str | None:
+    """Text of the first descendant <*:local> — taking its own text or that of its child (gco:CharacterString / gmd:URL)."""
+    for node in el.iter("{*}" + local):
+        txt = (node.text or "").strip() or "".join(c.text or "" for c in node).strip()
+        if txt:
+            return txt
+    return None
+
+
+def parse(xml: bytes, uuid: str) -> Record:
+    root = etree.fromstring(xml)
+    ident = next(root.iter("{*}identificationInfo"), root)
+    title = _first_text(next(ident.iter("{*}citation"), ident), "title") or uuid
+    links, seen = [], set()
+    for dist in root.iter("{*}distributionInfo"):
+        for ol in dist.iter("{*}CI_OnlineResource"):
+            url = _first_text(ol, "linkage")
+            if not url or url in seen:
+                continue
+            seen.add(url)
+            links.append(Link(url, _first_text(ol, "name") or "", _first_text(ol, "protocol") or ""))
+    bbox = None
+    bb = next(root.iter("{*}EX_GeographicBoundingBox"), None)
+    if bb is not None:
+        try:
+            bbox = tuple(float(_first_text(bb, k)) for k in ("westBoundLongitude", "southBoundLatitude", "eastBoundLongitude", "northBoundLatitude"))
+        except (TypeError, ValueError):
+            bbox = None
+    lic = None
+    for c in root.iter("{*}otherConstraints"):
+        t = "".join(c.itertext()).strip()
+        if "licen" in t.lower() or "creative commons" in t.lower():
+            lic = t
+            break
+    return Record(uuid, title, links, bbox, lic)
 
 
 def fetch(uuid: str, timeout=60) -> Record:
-    r = requests.get(ECAT.format(uuid=uuid), timeout=timeout, headers={"Accept": "application/xml"})
+    r = requests.get(ECAT.format(uuid=uuid), timeout=timeout, headers=HEADERS)
     r.raise_for_status()
-    root = etree.fromstring(r.content)
-    title = _text(root, "//gmd:identificationInfo//gmd:citation//gmd:title/gco:CharacterString/text()") or uuid
-    links = []
-    for ol in root.xpath("//gmd:distributionInfo//gmd:CI_OnlineResource", namespaces=NS):
-        url = _text(ol, "gmd:linkage/gmd:URL/text()")
-        if not url:
-            continue
-        links.append(Link(url, _text(ol, "gmd:name/gco:CharacterString/text()") or "", _text(ol, "gmd:protocol/gco:CharacterString/text()") or ""))
-    bb = root.xpath("//gmd:EX_GeographicBoundingBox", namespaces=NS)
-    bbox = None
-    if bb:
-        g = lambda t: float(_text(bb[0], f"gmd:{t}/gco:Decimal/text()"))  # noqa: E731
-        try:
-            bbox = (g("westBoundLongitude"), g("southBoundLatitude"), g("eastBoundLongitude"), g("northBoundLatitude"))
-        except (TypeError, ValueError):
-            bbox = None
-    lic = _text(root, "//gmd:resourceConstraints//gmd:otherConstraints/gco:CharacterString/text()")
-    return Record(uuid, title, links, bbox, lic)
+    return parse(r.content, uuid)
