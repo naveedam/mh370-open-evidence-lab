@@ -58,6 +58,21 @@ export function DataProvider({ children }: { children: ReactNode }) {
         )
         const coverage = await fetch('/data/coverage-summary.json').then((r) => (r.ok ? r.json() : [])).catch(() => [])
         const found = new Map(loaded.filter((x) => x !== null))
+        // Mark datasets the pipeline has published, using its download manifest as provenance.
+        const manifest = await fetch('/data/ga-p1-manifest.json').then((r) => (r.ok ? r.json() : null)).catch(() => null)
+        const datasets = DATASETS.map((d) =>
+          d.id === 'ds-ga-p1-bathy-150m' && manifest && found.has('search-sonar-coverage')
+            ? {
+                ...d,
+                ingestionStatus: 'ingested' as const,
+                acquisitionDate: String(manifest.acquired_at ?? '').slice(0, 10) || null,
+                processingHistory: [
+                  `Downloaded ${manifest.file} (${(Number(manifest.bytes) / 1e6).toFixed(1)} MB), SHA-256 ${manifest.sha256}`,
+                  'Coverage footprint derived by GitHub Actions data pipeline → public/data/search-sonar-coverage.geojson',
+                ],
+              }
+            : d,
+        )
         const layers = LAYERS.map((l) => {
           const fc = found.get(l.id)
           if (!fc) return l
@@ -66,7 +81,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           return { ...l, evidenceClass, data: fc }
         })
         if (!cancelled)
-          setState((s) => ({ ...s, layers, coverage: Array.isArray(coverage) ? coverage : [], status: found.size ? 'static-data' : 'offline-seed' }))
+          setState((s) => ({ ...s, layers, datasets, coverage: Array.isArray(coverage) ? coverage : [], status: found.size ? 'static-data' : 'offline-seed' }))
       }
     })()
     return () => { cancelled = true }

@@ -59,7 +59,7 @@ export default function Coverage() {
               </table>
             </CardBody>
           </Card>
-          <EmptyState title="Survey polygons not loaded" reason="Coverage polygons and survey resolution will be derived from Geoscience Australia's released bathymetry and sonar packages." required="Geoscience Australia MH370 data release" href="https://www.ga.gov.au/scientific-topics/marine-and-coastal/showcase/mh370-data-release" />
+          {coverage.length === 0 && <EmptyState title="Survey polygons not loaded" reason="Coverage polygons and survey resolution will be derived from Geoscience Australia's released bathymetry and sonar packages." required="Geoscience Australia MH370 data release" href="https://www.ga.gov.au/scientific-topics/marine-and-coastal/showcase/mh370-data-release" />}
         </div>
         <Card>
           <CardHeader title="Coverage classes" />

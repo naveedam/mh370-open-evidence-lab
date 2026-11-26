@@ -21,7 +21,8 @@ function Metric({ label, value, note }: { label: string; value: string; note: st
 }
 
 export default function Overview() {
-  const { layers: LAYERS, datasets: DATASETS, hypotheses: SEED_HYPOTHESES } = useData()
+  const { layers: LAYERS, datasets: DATASETS, hypotheses: SEED_HYPOTHESES, coverage } = useData()
+  const coveredKm2 = coverage.reduce((a, r) => a + r.areaKm2, 0)
   const debris = LAYERS.find((l) => l.id === 'ocean-debris')?.data?.features.length ?? 0
   const gaps = LAYERS.filter((l) => !l.data && !l.tiles).length
   const ingested = DATASETS.filter((d) => d.ingestionStatus === 'ingested').length
@@ -30,7 +31,7 @@ export default function Overview() {
       <PageHeader title="Intelligence Overview" subtitle="Re-examining the disappearance of Flight MH370 through AI, geospatial intelligence and open scientific evidence." />
       <div className="grid grid-cols-5 gap-3 px-6 pt-5">
         <Metric label="Verified datasets loaded" value={String(ingested)} note={`of ${DATASETS.length} catalogued sources`} />
-        <Metric label="Search coverage represented" value="Data pending" note="Awaiting GA survey extents ingestion" />
+        <Metric label="Coverage represented" value={coveredKm2 ? `${Math.round(coveredKm2 / 1000).toLocaleString()}k km²` : 'Data pending'} note={coveredKm2 ? 'Bathymetry-mapped area only; sonar-search extents pending' : 'Awaiting GA survey extents ingestion'} />
         <Metric label="Debris locations mapped" value={String(debris)} note="Confirmed items, locality-level only; full inventory pending" />
         <Metric label="Hypotheses under evaluation" value={String(SEED_HYPOTHESES.length)} note="All confidence: unassessed" />
         <Metric label="Unresolved data gaps" value={String(gaps)} note="Map layers awaiting source data" />

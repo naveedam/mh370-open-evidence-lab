@@ -55,10 +55,12 @@ def parse(xml: bytes, uuid: str) -> Record:
         except (TypeError, ValueError):
             bbox = None
     lic = None
-    for c in root.iter("{*}otherConstraints"):
-        t = "".join(c.itertext()).strip()
-        if "licen" in t.lower() or "creative commons" in t.lower():
-            lic = t
+    for c in root.iter("{*}MD_LegalConstraints"):
+        for t in (x.strip() for x in c.itertext()):
+            if "creative commons" in t.lower() or "licence" in t.lower() or "license" in t.lower():
+                lic = t
+                break
+        if lic:
             break
     return Record(uuid, title, links, bbox, lic)
 
