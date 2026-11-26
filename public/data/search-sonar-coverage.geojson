@@ -1,6 +1,6 @@
 {
  "type": "FeatureCollection",
- "generated": "2026-11-26T01:30:07+00:00",
+ "generated": "2026-11-26T01:45:26+00:00",
  "features": [
   {
    "type": "Feature",
@@ -146545,9 +146545,9 @@
     "source": "Geoscience Australia — MH370 Phase 1 150 m bathymetry (CC BY 4.0)",
     "sourceUrl": "https://ecat.ga.gov.au/geonetwork/srv/eng/catalog.search#/metadata/d887e71a-71dc-4851-94a9-920f7b7cc7e5",
     "publicationDate": "2017-07-14",
-    "date": "acquired 2026-11-26T01:30:06+00:00",
+    "date": "acquired 2026-11-26T01:45:25+00:00",
     "spatialAccuracy": "Boundary ±~1050 m + 0.005° simplification",
-    "methodology": "Valid-data mask of 'Southern_Indian_Ocean__MH370__Bathymetry_2017_150m_MSL_cog.tif' (EPSG:3857), sampled 1:7. Input SHA-256 17b310edaf778591…; pipeline v0.2.2",
+    "methodology": "Valid-data mask of 'Southern_Indian_Ocean__MH370__Bathymetry_2017_150m_MSL_cog.tif' (EPSG:3857), sampled 1:7. Input SHA-256 17b310edaf778591…; pipeline v0.2.3",
     "confidence": "high",
     "areaKm2": 818327,
     "verificationNote": "Reproduce: GitHub Actions → Data pipeline → ga-p1-footprints"
