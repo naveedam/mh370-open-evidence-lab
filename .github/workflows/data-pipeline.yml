@@ -20,8 +20,8 @@ jobs:
   run:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
           cache: pip
@@ -52,4 +52,5 @@ jobs:
           git add public/data
           if git diff --cached --quiet; then echo "No data changes."; exit 0; fi
           git commit -m "data: ${{ inputs.task || 'debris' }} via Data pipeline (run ${{ github.run_id }})"
-          git push
+                    for i in 1 2 3; do git pull --rebase -X theirs && git push && exit 0; sleep 5; done
+          exit 1
